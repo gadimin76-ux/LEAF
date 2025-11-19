@@ -1055,10 +1055,7 @@
                 }
 
                 checkFieldEntries();
-                const baseName = currentFile.replace('body.tpl', '');
-                const pattern = `^${baseName}(emailTo|emailCc|subject|body)\.tpl$`;
-                const baseReg = new RegExp(pattern);
-                const hasCustomContent = res?.modified === 1 || customTemplates.some(filename => baseReg.test(filename));
+                const hasCustomContent = customTemplateFileExists(currentFile, customTemplates);
                 if (hasCustomContent === true) {
                     $('#restore_original, #btn_compare').addClass('modifiedTemplate');
                     $(`.template_files a[data-file="${currentFile}"] + span`).addClass('custom_file');
@@ -1611,6 +1608,13 @@
         }
     }
 
+    function customTemplateFileExists(bodyname = '', customoverrideFilenames = []) {
+        const baseName = bodyname.replace('body.tpl', '');
+        const pattern = `^${baseName}(emailTo|emailCc|subject|body)\.tpl$`;
+        const baseReg = new RegExp(pattern);
+        return customoverrideFilenames.some(fn => baseReg.test(fn));
+    }
+
     //loads components when the document loads
     $(document).ready(function() {
         registerVariablesPlugin();
@@ -1675,10 +1679,8 @@
                                 filesMobile += '<optgroup label="Custom Events">';
 
                                 userTemplates.forEach(t => {
-                                    const baseName = t.fileName.replace('body.tpl', '');
-                                    const pattern = `^${baseName}(emailTo|emailCc|subject|body)\.tpl$`;
-                                    const baseReg = new RegExp(pattern);
-                                    customClass = customTemplates.some(filename => baseReg.test(filename)) ? ' class="custom_file"' : '';
+                                    const hasCustomContent = customTemplateFileExists(t.fileName, customTemplates);
+                                    customClass = hasCustomContent ? ' class="custom_file"' : '';
                                     selectedAttr = t.fileName === currentFile ? ' selected' : '';
 
                                     // Construct the li element for non-mobile buffer
@@ -1700,10 +1702,8 @@
                             filesMobile += `<optgroup label="Standard Events">`;
 
                             standardTemplates.forEach(t => {
-                                const baseName = t.fileName.replace('body.tpl', '');
-                                const pattern = `^${baseName}(emailTo|emailCc|subject|body)\.tpl$`;
-                                const baseReg = new RegExp(pattern);
-                                customClass = customTemplates.some(filename => baseReg.test(filename)) ? ' class="custom_file"' : '';
+                                const hasCustomContent = customTemplateFileExists(t.fileName, customTemplates);
+                                customClass = hasCustomContent ? ' class="custom_file"' : '';
                                 selectedAttr = t.fileName === currentFile ? ' selected' : '';
 
                                 // Construct the li element for non-mobile buffer
@@ -1728,6 +1728,12 @@
 
                         $('#fileList').html(buffer);
                         $('.filesMobile').html(filesMobile);
+
+                        const hasCustomContent = customTemplateFileExists(currentFile, customTemplates);
+                        if (hasCustomContent === true) {
+                            $('#restore_original, #btn_compare').addClass('modifiedTemplate');
+                            $(`.template_files a[data-file="${currentFile}"] + span`).addClass('custom_file');
+                        }
 
                         // Attach onchange event handler to templateFiles select element (mobile nav)
                         $('.template_select_container').on('change', function (event) {
